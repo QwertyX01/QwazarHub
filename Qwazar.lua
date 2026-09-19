@@ -1,5 +1,5 @@
 --// ============================================
---//  LUNIE HUB v2.0 • Blox
+--//  LUNIE HUB v2.1 • Blox
 --//  UI: Lunie Hub | Features: META
 --// ============================================
 local Players = game:GetService("Players")
@@ -1138,8 +1138,6 @@ end
 --// ============================================
 local Dots = {}
 local DotConnection = nil
-local MainFrameRef = nil
-local IconRef = nil
 
 --// ============================================
 --//  MINIBAR
@@ -1199,7 +1197,6 @@ Main.BorderSizePixel = 0
 Main.Active = true
 Main.ClipsDescendants = true
 Main.Parent = ScreenGui
-MainFrameRef = Main
 
 local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 16)
@@ -1271,7 +1268,7 @@ local SubTitle = Instance.new("TextLabel")
 SubTitle.Size = UDim2.new(1, -66, 0, 14)
 SubTitle.Position = UDim2.new(0, 62, 0, 37)
 SubTitle.BackgroundTransparency = 1
-SubTitle.Text = "Blox • v2.0"
+SubTitle.Text = "Blox • v2.1"
 SubTitle.TextColor3 = C.AccentL
 SubTitle.Font = Enum.Font.GothamMedium
 SubTitle.TextSize = 11
@@ -1347,6 +1344,7 @@ local LANG = {
             Sound_N1 = "Звук N1",
             Sound_N2 = "Звук N2",
             Sound_Reset = "Сброс",
+            Language = "Язык / Language",
         }
     },
     EN = {
@@ -1379,6 +1377,7 @@ local LANG = {
             Sound_N1 = "Sound N1",
             Sound_N2 = "Sound N2",
             Sound_Reset = "Reset",
+            Language = "Language / Язык",
         }
     }
 }
@@ -1574,7 +1573,7 @@ local function SelectTab(name)
 end
 
 --// ============================================
---//  UI COMPONENTS
+--//  UI COMPONENTS (FIXED)
 --// ============================================
 local function CreateToggle(parent, text, order, default, callback)
     local Card = Instance.new("Frame")
@@ -1643,9 +1642,7 @@ local function CreateToggle(parent, text, order, default, callback)
         SetState(not state)
     end)
 
-    Card.GetState = function() return state end
-    Card.SetState = SetState
-    Card.Label = lbl
+    -- ВОЗВРАЩАЕМ ЧЕРЕЗ ПЕРЕМЕННЫЕ, НЕ ВЕШАЕМ НА FRAME
     return Card, SetState, lbl
 end
 
@@ -1739,7 +1736,7 @@ local function CreateSlider(parent, text, order, minVal, maxVal, default, callba
         end
     end)
 
-    return Card
+    return Card, lbl
 end
 
 local function CreateColorPicker(parent, text, order, defaultColor, callback)
@@ -1831,8 +1828,7 @@ local function CreateColorPicker(parent, text, order, defaultColor, callback)
         end
     end)
 
-    Card.Label = lbl
-    return Card
+    return Card, lbl
 end
 
 local function CreateButton(parent, text, order, callback, accent)
@@ -1870,7 +1866,6 @@ local function CreateButton(parent, text, order, callback, accent)
         if callback then callback() end
     end)
 
-    Btn.Label = Btn
     return Btn
 end
 
@@ -1991,9 +1986,7 @@ local function CreateDropdown(parent, text, order, options, default, callback)
         end
     end)
 
-    Card.GetValue = function() return selected end
-    Card.Label = lbl
-    return Card
+    return Card, lbl
 end
 
 --// ============================================
@@ -2009,32 +2002,32 @@ local SettingsPage = CreateTab("Settings", 6)
 --// ============================================
 --//  COMBAT TAB
 --// ============================================
-local silentToggle, setSilentState, silentLabel = CreateToggle(CombatPage, "Silent Aim", 2, false, function(state)
+local silentCard, setSilentState, silentLabel = CreateToggle(CombatPage, "Silent Aim", 2, false, function(state)
     SilentAimEnabled = state
     _G.SilentAimEnabled = state
     if not state then CurrentTarget = nil end
 end)
 
-local offCircleToggle, setOffCircleState, offCircleLabel = CreateToggle(CombatPage, "Off Circle", 3, false, function(state)
+local offCircleCard, setOffCircleState, offCircleLabel = CreateToggle(CombatPage, "Off Circle", 3, false, function(state)
     OffCircleEnabled = state
     _G.OffCircleEnabled = state
 end)
 
-local fovSlider = CreateSlider(CombatPage, "FOV Radius", 4, 50, 600, 200, function(val)
+local fovCard, fovLabel = CreateSlider(CombatPage, "FOV Radius", 4, 50, 600, 200, function(val)
     MaxFOV = val
     _G.SilentAimFOV = val
 end)
 
-local partDropdown = CreateDropdown(CombatPage, "Target Part", 5, {"Head", "Torso", "HumanoidRootPart"}, "Head", function(val)
+local partCard, partLabel = CreateDropdown(CombatPage, "Target Part", 5, {"Head", "Torso", "HumanoidRootPart"}, "Head", function(val)
     _G.SelectedPart = val
 end)
 
-local noRecoilToggle, setNoRecoilState, noRecoilLabel = CreateToggle(CombatPage, "No Recoil", 6, false, function(state)
+local noRecoilCard, setNoRecoilState, noRecoilLabel = CreateToggle(CombatPage, "No Recoil", 6, false, function(state)
     _G.NoRecoilEnabled = state
     if state then ApplyNoRecoil() end
 end)
 
-local noSpreadToggle, setNoSpreadState, noSpreadLabel = CreateToggle(CombatPage, "No Spread", 7, false, function(state)
+local noSpreadCard, setNoSpreadState, noSpreadLabel = CreateToggle(CombatPage, "No Spread", 7, false, function(state)
     _G.NoSpreadEnabled = state
     if state then ApplyNoSpread() end
 end)
@@ -2042,12 +2035,12 @@ end)
 --// ============================================
 --//  VISUALS TAB
 --// ============================================
-local chamsToggle, setChamsState, chamsLabel = CreateToggle(VisualsPage, "Chams", 2, false, function(state)
+local chamsCard, setChamsState, chamsLabel = CreateToggle(VisualsPage, "Chams", 2, false, function(state)
     _G.ChamsEnabled = state
     if state then ApplyChams() else RemoveChams() end
 end)
 
-local chamsColorPicker = CreateColorPicker(VisualsPage, "Chams Color", 3, _G.ChamsColor, function(color)
+local chamsColorCard, chamsColorLabel = CreateColorPicker(VisualsPage, "Chams Color", 3, _G.ChamsColor, function(color)
     _G.ChamsColor = color
     for _, p in ipairs(Players:GetPlayers()) do
         if p.Character then
@@ -2061,17 +2054,17 @@ local chamsColorPicker = CreateColorPicker(VisualsPage, "Chams Color", 3, _G.Cha
     end
 end)
 
-local espToggle, setEspState, espLabel = CreateToggle(VisualsPage, "Tracers and 3D Box", 4, false, function(state)
+local espCard, setEspState, espLabel = CreateToggle(VisualsPage, "Tracers and 3D Box", 4, false, function(state)
     _G.ESPEnabled = state
     if state then ApplyESP() else RemoveESP() end
 end)
 
-local skeletonToggle, setSkeletonState, skeletonLabel = CreateToggle(VisualsPage, "Skeleton", 5, false, function(state)
+local skeletonCard, setSkeletonState, skeletonLabel = CreateToggle(VisualsPage, "Skeleton", 5, false, function(state)
     _G.SkeletonEnabled = state
     if state then ApplySkeleton() else RemoveSkeleton() end
 end)
 
-local skeletonColorPicker = CreateColorPicker(VisualsPage, "Skeleton Color", 6, _G.SkeletonColor, function(color)
+local skeletonColorCard, skeletonColorLabel = CreateColorPicker(VisualsPage, "Skeleton Color", 6, _G.SkeletonColor, function(color)
     _G.SkeletonColor = color
     for _, player in ipairs(Players:GetPlayers()) do
         if SkeletonLines[player] then
@@ -2082,17 +2075,17 @@ local skeletonColorPicker = CreateColorPicker(VisualsPage, "Skeleton Color", 6, 
     end
 end)
 
-local healthBarToggle, setHealthState, healthLabel = CreateToggle(VisualsPage, "Health Bar", 7, false, function(state)
+local healthCard, setHealthState, healthLabel = CreateToggle(VisualsPage, "Health Bar", 7, false, function(state)
     _G.HealthBarEnabled = state
     if state then ApplyHealthBar() else RemoveHealthBar() end
 end)
 
-local particleGuiToggle, setParticleGuiState, particleGuiLabel = CreateToggle(VisualsPage, "Particle Effect GUI", 8, false, function(state)
+local particleGuiCard, setParticleGuiState, particleGuiLabel = CreateToggle(VisualsPage, "Particle Effect GUI", 8, false, function(state)
     _G.ParticleEffectGuiEnabled = state
     if state then ApplyParticleGui() else RemoveParticleGui() end
 end)
 
-local fpsToggle, setFpsState, fpsLabel = CreateToggle(VisualsPage, "FPS Boost", 9, false, function(state)
+local fpsCard, setFpsState, fpsLabel = CreateToggle(VisualsPage, "FPS Boost", 9, false, function(state)
     _G.FpsBoostEnabled = state
     if state then ApplyFpsBoost() end
 end)
@@ -2119,41 +2112,21 @@ mic.Parent = miscInfo
 --// ============================================
 --//  SKY TAB
 --// ============================================
-local skyBtnNight = CreateButton(SkyPage, "Night Sky", 2, function()
-    StartNightSky()
-end)
-
-local skyBtnEvening = CreateButton(SkyPage, "Evening Sky", 3, function()
-    StartEveningSky()
-end)
-
-local skyBtnPurple = CreateButton(SkyPage, "Purple Sky", 4, function()
-    StartPurpleSky()
-end)
-
-local skyBtnReset = CreateButton(SkyPage, "Reset Sky", 5, function()
-    ResetSky()
-end)
+local skyBtnNight = CreateButton(SkyPage, "Night Sky", 2, function() StartNightSky() end)
+local skyBtnEvening = CreateButton(SkyPage, "Evening Sky", 3, function() StartEveningSky() end)
+local skyBtnPurple = CreateButton(SkyPage, "Purple Sky", 4, function() StartPurpleSky() end)
+local skyBtnReset = CreateButton(SkyPage, "Reset Sky", 5, function() ResetSky() end)
 
 --// ============================================
 --//  SOUND TAB
 --// ============================================
-local soundBtnN1 = CreateButton(SoundPage, "Sound N1", 2, function()
-    StartSoundSystem("135201580846609", 3)
-end)
-
-local soundBtnN2 = CreateButton(SoundPage, "Sound N2", 3, function()
-    StartSoundSystem("93446662377809", 10)
-end)
-
-local soundBtnReset = CreateButton(SoundPage, "Stop Sound", 4, function()
-    StopSoundSystem()
-end)
+local soundBtnN1 = CreateButton(SoundPage, "Sound N1", 2, function() StartSoundSystem("135201580846609", 3) end)
+local soundBtnN2 = CreateButton(SoundPage, "Sound N2", 3, function() StartSoundSystem("93446662377809", 10) end)
+local soundBtnReset = CreateButton(SoundPage, "Stop Sound", 4, function() StopSoundSystem() end)
 
 --// ============================================
 --//  SETTINGS TAB
 --// ============================================
--- Language
 local langRow = Instance.new("Frame")
 langRow.Size = UDim2.new(1, -8, 0, 46)
 langRow.BackgroundColor3 = C.Panel
@@ -2232,22 +2205,19 @@ langBtnRU.MouseButton1Click:Connect(function()
     UpdateAllTexts()
 end)
 
--- Opacity slider
-local opacitySlider = CreateSlider(SettingsPage, "Opacity", 3, 0, 50, 12, function(val)
+local opacityCard, opacityLabel = CreateSlider(SettingsPage, "Opacity", 3, 0, 50, 12, function(val)
     _G.MenuOpacity = val
     Main.BackgroundTransparency = val / 100
 end)
 
--- Scale slider
-local scaleSlider = CreateSlider(SettingsPage, "Menu Scale", 4, 27, 63, 45, function(val)
+local scaleCard, scaleLabel = CreateSlider(SettingsPage, "Menu Scale", 4, 27, 63, 45, function(val)
     _G.MenuScale = val
     local s = val / 45
     local size = UDim2.new(0, 680 * s, 0, 520 * s)
     TweenService:Create(Main, TweenInfo.new(0.2), {Size = size}):Play()
 end)
 
--- Rainbow toggle
-local rainbowToggle, setRainbowState, rainbowLabel = CreateToggle(SettingsPage, "UI Rainbow Color", 5, false, function(state)
+local rainbowCard, setRainbowState, rainbowLabel = CreateToggle(SettingsPage, "UI Rainbow Color", 5, false, function(state)
     _G.RainbowEnabled = state
     if state then
         if _G.RainbowConn then _G.RainbowConn:Disconnect() end
@@ -2264,19 +2234,17 @@ local rainbowToggle, setRainbowState, rainbowLabel = CreateToggle(SettingsPage, 
     end
 end)
 
--- UI Color picker
-local uiColorToggle, setUiColorState, uiColorLabel = CreateToggle(SettingsPage, "Custom UI Color", 6, false, function(state)
+local uiColorCard, setUiColorState, uiColorLabel = CreateToggle(SettingsPage, "Custom UI Color", 6, false, function(state)
     _G.CustomThemeEnabled = state
 end)
 
-local uiColorPicker = CreateColorPicker(SettingsPage, "UI Color", 7, _G.MenuThemeColor, function(color)
+local uiColorPickerCard, uiColorPickerLabel = CreateColorPicker(SettingsPage, "UI Color", 7, _G.MenuThemeColor, function(color)
     if not _G.CustomThemeEnabled or _G.RainbowEnabled then return end
     _G.MenuThemeColor = color
     MainStroke.Color = color
 end)
 
--- Flying dots toggle
-local flyingToggle, setFlyingState, flyingLabel = CreateToggle(SettingsPage, "Flying Dots", 8, false, function(state)
+local flyingCard, setFlyingState, flyingLabel = CreateToggle(SettingsPage, "Flying Dots", 8, false, function(state)
     _G.FlyingDots = state
     if state then
         if DotConnection then DotConnection:Disconnect() end
@@ -2322,12 +2290,10 @@ local flyingToggle, setFlyingState, flyingLabel = CreateToggle(SettingsPage, "Fl
         if DotConnection then DotConnection:Disconnect() DotConnection = nil end
         for _, data in ipairs(Dots) do
             if data and data.Frame then data.Frame:Destroy() end
-        end
-        Dots = {}
+        end        Dots = {}
     end
 end)
 
--- Reset button
 local resetBtn = CreateButton(SettingsPage, "Reset Settings", 9, function()
     _G.MenuThemeColor = Color3.fromRGB(255, 255, 255)
     _G.MenuOpacity = 12
@@ -2341,19 +2307,19 @@ local resetBtn = CreateButton(SettingsPage, "Reset Settings", 9, function()
     MainStroke.Color = _G.MenuThemeColor
     MiniStroke.Color = C.Accent
 
-    setSilentState(false)
-    setOffCircleState(false)
-    setNoRecoilState(false)
-    setNoSpreadState(false)
-    setChamsState(false)
-    setEspState(false)
-    setSkeletonState(false)
-    setHealthState(false)
-    setParticleGuiState(false)
-    setFpsState(false)
-    setRainbowState(false)
-    setUiColorState(false)
-    setFlyingState(false)
+    if setSilentState then setSilentState(false) end
+    if setOffCircleState then setOffCircleState(false) end
+    if setNoRecoilState then setNoRecoilState(false) end
+    if setNoSpreadState then setNoSpreadState(false) end
+    if setChamsState then setChamsState(false) end
+    if setEspState then setEspState(false) end
+    if setSkeletonState then setSkeletonState(false) end
+    if setHealthState then setHealthState(false) end
+    if setParticleGuiState then setParticleGuiState(false) end
+    if setFpsState then setFpsState(false) end
+    if setRainbowState then setRainbowState(false) end
+    if setUiColorState then setUiColorState(false) end
+    if setFlyingState then setFlyingState(false) end
 
     RemoveChams() RemoveESP() RemoveSkeleton() RemoveHealthBar()
     RemoveParticleGui() ResetSky() StopSoundSystem()
@@ -2364,7 +2330,6 @@ end)
 --// ============================================
 RegisterLang(function()
     local L = GetLang()
-    -- Tabs
     if Tabs["Combat"] then Tabs["Combat"].Label.Text = L.Tabs[1] end
     if Tabs["Visuals"] then Tabs["Visuals"].Label.Text = L.Tabs[2] end
     if Tabs["Misc"] then Tabs["Misc"].Label.Text = L.Tabs[3] end
@@ -2372,37 +2337,33 @@ RegisterLang(function()
     if Tabs["Sound"] then Tabs["Sound"].Label.Text = L.Tabs[5] end
     if Tabs["Settings"] then Tabs["Settings"].Label.Text = L.Tabs[6] end
 
-    -- Combat
-    silentLabel.Text = L.Texts.SilentAim[1]
-    offCircleLabel.Text = L.Texts.OffCircle[1]
-    noRecoilLabel.Text = L.Texts.NoRecoil[1]
-    noSpreadLabel.Text = L.Texts.NoSpread[1]
+    if silentLabel then silentLabel.Text = L.Texts.SilentAim[1] end
+    if offCircleLabel then offCircleLabel.Text = L.Texts.OffCircle[1] end
+    if noRecoilLabel then noRecoilLabel.Text = L.Texts.NoRecoil[1] end
+    if noSpreadLabel then noSpreadLabel.Text = L.Texts.NoSpread[1] end
 
-    -- Visuals
-    chamsLabel.Text = L.Texts.Chams[1]
-    espLabel.Text = L.Texts.ESP[1]
-    skeletonLabel.Text = L.Texts.Skeleton[1]
-    healthLabel.Text = L.Texts.HealthBar[1]
-    particleGuiLabel.Text = L.Texts.ParticleGui[1]
-    fpsLabel.Text = L.Texts.FpsBoost[1]
-    chamsColorPicker.Label.Text = L.Texts.ChamsColor
-    skeletonColorPicker.Label.Text = L.Texts.SkeletonColor
+    if chamsLabel then chamsLabel.Text = L.Texts.Chams[1] end
+    if espLabel then espLabel.Text = L.Texts.ESP[1] end
+    if skeletonLabel then skeletonLabel.Text = L.Texts.Skeleton[1] end
+    if healthLabel then healthLabel.Text = L.Texts.HealthBar[1] end
+    if particleGuiLabel then particleGuiLabel.Text = L.Texts.ParticleGui[1] end
+    if fpsLabel then fpsLabel.Text = L.Texts.FpsBoost[1] end
+    if chamsColorLabel then chamsColorLabel.Text = L.Texts.ChamsColor end
+    if skeletonColorLabel then skeletonColorLabel.Text = L.Texts.SkeletonColor end
 
-    -- Sky
-    skyBtnNight.Text = L.Texts.Sky_Night
-    skyBtnEvening.Text = L.Texts.Sky_Evening
-    skyBtnPurple.Text = L.Texts.Sky_Purple
-    skyBtnReset.Text = L.Texts.Sky_Reset
+    if skyBtnNight then skyBtnNight.Text = L.Texts.Sky_Night end
+    if skyBtnEvening then skyBtnEvening.Text = L.Texts.Sky_Evening end
+    if skyBtnPurple then skyBtnPurple.Text = L.Texts.Sky_Purple end
+    if skyBtnReset then skyBtnReset.Text = L.Texts.Sky_Reset end
 
-    -- Sound
-    soundBtnN1.Text = L.Texts.Sound_N1
-    soundBtnN2.Text = L.Texts.Sound_N2
-    soundBtnReset.Text = L.Texts.Sound_Reset
+    if soundBtnN1 then soundBtnN1.Text = L.Texts.Sound_N1 end
+    if soundBtnN2 then soundBtnN2.Text = L.Texts.Sound_N2 end
+    if soundBtnReset then soundBtnReset.Text = L.Texts.Sound_Reset end
 
-    -- Settings
-    rainbowLabel.Text = L.Texts.Rainbow[1]
-    uiColorLabel.Text = L.Texts.UIColor[1]
-    flyingLabel.Text = L.Texts.FlyingDots[1]
+    if rainbowLabel then rainbowLabel.Text = L.Texts.Rainbow[1] end
+    if uiColorLabel then uiColorLabel.Text = L.Texts.UIColor[1] end
+    if flyingLabel then flyingLabel.Text = L.Texts.FlyingDots[1] end
+    if langLbl then langLbl.Text = L.Texts.Language end
 end)
 
 --// ============================================
@@ -2467,21 +2428,16 @@ UserInputService.InputEnded:Connect(function(input)
 end)
 
 --// ============================================
---//  RIGHT CONTROL
+--//  RIGHT CONTROL / INSERT
 --// ============================================
 local uiVisible = true
 UserInputService.InputBegan:Connect(function(input, gpe)
     if gpe then return end
-    if input.KeyCode == Enum.KeyCode.RightControl then
+    if input.KeyCode == Enum.KeyCode.RightControl or input.KeyCode == Enum.KeyCode.Insert then
         uiVisible = not uiVisible
         Main.Visible = uiVisible
         Main.Active = uiVisible
         if uiVisible then SFX.Open() else SFX.Close() end
-    end
-    if input.KeyCode == Enum.KeyCode.Insert then
-        uiVisible = not uiVisible
-        Main.Visible = uiVisible
-        Main.Active = uiVisible
     end
 end)
 
@@ -2495,4 +2451,4 @@ SFX.Pop()
 SelectTab("Combat")
 UpdateAllTexts()
 
-print("[LUNIE] Lunie Hub v2.0 loaded • Anti-cheat bypass + scanner hide active")
+print("[LUNIE] Lunie Hub v2.1 loaded • Anti-cheat bypass + scanner hide active")
